@@ -23,6 +23,7 @@ class Rod extends BaseElement {
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.roundRect(this.x, this.y, this.width, this.height, [10, 10, 0, 0]);
+    ctx.roundRect(this.x - 75, this.y + this.height, 160, this.width, 10);
     ctx.fill();
   }
 }
@@ -109,16 +110,16 @@ export class TowerOfHanoi {
   private initGame() {
     this.discs = [];
     this.rods = [
-      new Rod(175, this.canvas.height - 200, 15, 200),
-      new Rod(330, this.canvas.height - 200, 15, 200),
-      new Rod(510, this.canvas.height - 200, 15, 200),
+      new Rod(100, this.canvas.height - 210, 10, 140),
+      new Rod(290, this.canvas.height - 210, 10, 140),
+      new Rod(480, this.canvas.height - 210, 10, 140),
     ];
 
     for (let i = 0; i < this.discTotal; i++) {
       const height = 15;
-      const width = 35 + 20 * (this.discTotal - i - 1);
-      const x = this.rods[0].x - 10 * (this.discTotal - i);
-      const y = this.canvas.height - height - height * i;
+      const width = 30 + 20 * (this.discTotal - i - 1);
+      const x = this.rods[0].x - this.rods[0].width * (this.discTotal - i);
+      const y = this.rods[0].y + this.rods[0].height - height - height * i;
       const color = this.discColors[i % this.discColors.length];
 
       this.discs.push(new Disc(this.rods[0], x, y, width, 15, color));
@@ -143,6 +144,12 @@ export class TowerOfHanoi {
     this.ctx.fillStyle = "white";
     this.ctx.fillText("Disc:", 10, 32);
     this.ctx.fillText(`${this.discTotal}`, 76, 32);
+    this.ctx.font = "16px Arial";
+    this.ctx.fillText(
+      `Minimum Moves: ${2 ** this.discTotal - 1}`,
+      this.canvas.width - 155,
+      this.canvas.height - 10,
+    );
 
     this.incrementBtn.draw(this.ctx);
     this.decrementBtn.draw(this.ctx);
