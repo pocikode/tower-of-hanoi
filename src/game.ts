@@ -1,40 +1,10 @@
-class Rod {
-  public color = "#2A2B5F";
-
+abstract class BaseElement {
   constructor(
     public x: number,
     public y: number,
     public width: number,
     public height: number,
   ) {}
-
-  public draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.roundRect(this.x, this.y, this.width, this.height, [10, 10, 0, 0]);
-    ctx.fill();
-  }
-}
-
-class Disc {
-  constructor(
-    public rod: Rod,
-    public x: number,
-    public y: number,
-    public width: number,
-    public height: number,
-    public color: string,
-  ) {}
-
-  public draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = this.color;
-
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.roundRect(this.x, this.y, this.width, this.height, [7]);
-    ctx.fill();
-    ctx.stroke();
-  }
 
   public isInside(mouseX: number, mouseY: number) {
     return (
@@ -46,48 +16,79 @@ class Disc {
   }
 }
 
-class Button {
+class Rod extends BaseElement {
+  public color = "#2A2B5F";
+
+  public draw(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.roundRect(this.x, this.y, this.width, this.height, [10, 10, 0, 0]);
+    ctx.fill();
+  }
+}
+
+class Disc extends BaseElement {
+  constructor(
+    public rod: Rod,
+    public x: number,
+    public y: number,
+    public width: number,
+    public height: number,
+    public color: string,
+  ) {
+    super(x, y, width, height);
+  }
+
+  public draw(ctx: CanvasRenderingContext2D) {
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.roundRect(this.x, this.y, this.width, this.height, [7]);
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+class Button extends BaseElement {
   constructor(
     public x: number,
     public y: number,
     public width: number,
     public height: number,
     public color: string,
-  ) {}
+    public strokeColor: string | null = null,
+    public lineWidth = 1,
+    public borderRadius = 10,
+  ) {
+    super(x, y, width, height);
+  }
 
   public draw(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.roundRect(this.x, this.y, this.width, this.height, [10]);
-    ctx.fill();
-  }
-}
-
-class Config {
-  discTotal = 5;
-
-  public draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#2A2B5F";
-    ctx.beginPath();
-    ctx.roundRect(70, 10, 40, 30, [10]);
+    ctx.roundRect(this.x, this.y, this.width, this.height, this.borderRadius);
     ctx.fill();
 
-    ctx.font = "23px Arial";
-    ctx.fillStyle = "white";
-    ctx.fillText("Disc:", 10, 32);
-    ctx.fillText(`${this.discTotal}`, 83, 33);
+    if (this.strokeColor != null) {
+      ctx.strokeStyle = this.strokeColor;
+      ctx.lineWidth = this.lineWidth;
+      ctx.stroke();
+    }
   }
 }
 
 export class TowerOfHanoi {
   private ctx: CanvasRenderingContext2D;
-  private config = new Config();
   private rods: Rod[] = [];
   private discs: Disc[] = [];
   private discColors: string[] = ["#FFEB55", "#EE66A6", "#D91656", "#640D5F"];
   private selectedDisc: Disc | null = null;
   private offsetX = 0;
   private offsetY = 0;
+
+  private discTotal = 4;
+  private incrementBtn: Button;
+  private decrementBtn: Button;
 
   constructor(private canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -96,6 +97,10 @@ export class TowerOfHanoi {
     }
 
     this.ctx = ctx;
+
+    this.incrementBtn = new Button(110, 13, 30, 27, "#2A2B5F", "blue");
+    this.decrementBtn = new Button(142, 13, 30, 27, "#2A2B5F", "blue");
+
     this.initGame();
     this.draw();
     this.registerEvents();
@@ -109,10 +114,10 @@ export class TowerOfHanoi {
       new Rod(510, this.canvas.height - 200, 15, 200),
     ];
 
-    for (let i = 0; i < this.config.discTotal; i++) {
+    for (let i = 0; i < this.discTotal; i++) {
       const height = 15;
-      const width = 35 + 20 * (this.config.discTotal - i - 1);
-      const x = this.rods[0].x - 10 * (this.config.discTotal - i);
+      const width = 35 + 20 * (this.discTotal - i - 1);
+      const x = this.rods[0].x - 10 * (this.discTotal - i);
       const y = this.canvas.height - height - height * i;
       const color = this.discColors[i % this.discColors.length];
 
@@ -123,9 +128,38 @@ export class TowerOfHanoi {
   private draw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.config.draw(this.ctx);
     this.rods.forEach((rod, _) => rod.draw(this.ctx));
     this.discs.forEach((disc, _) => disc.draw(this.ctx));
+    this.drawConfig();
+  }
+
+  private drawConfig() {
+    this.ctx.fillStyle = "#2A2B5F";
+    this.ctx.beginPath();
+    this.ctx.roundRect(60, 10, 45, 30, [10]);
+    this.ctx.fill();
+
+    this.ctx.font = "20px Arial";
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText("Disc:", 10, 32);
+    this.ctx.fillText(`${this.discTotal}`, 76, 32);
+
+    this.incrementBtn.draw(this.ctx);
+    this.decrementBtn.draw(this.ctx);
+
+    this.ctx.fillStyle = "white";
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.incrementBtn.x + 8, this.incrementBtn.y + 20);
+    this.ctx.lineTo(this.incrementBtn.x + 22, this.incrementBtn.y + 20);
+    this.ctx.lineTo(this.incrementBtn.x + 15, this.incrementBtn.y + 7);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.decrementBtn.x + 8, this.decrementBtn.y + 7);
+    this.ctx.lineTo(this.decrementBtn.x + 22, this.decrementBtn.y + 7);
+    this.ctx.lineTo(this.decrementBtn.x + 15, this.decrementBtn.y + 20);
+    this.ctx.closePath();
+    this.ctx.fill();
   }
 
   private registerEvents() {
@@ -144,6 +178,14 @@ export class TowerOfHanoi {
       this.offsetX = mouseX - disc.x;
       this.offsetY = mouseY - disc.y;
     }
+
+    if (this.incrementBtn.isInside(mouseX, mouseY)) {
+      this.incrementDisc();
+    }
+
+    if (this.decrementBtn.isInside(mouseX, mouseY)) {
+      this.decrementDisc();
+    }
   }
 
   private onMouseMove(e: MouseEvent) {
@@ -156,5 +198,21 @@ export class TowerOfHanoi {
 
   private onMouseUp() {
     this.selectedDisc = null;
+  }
+
+  private incrementDisc() {
+    if (this.discTotal < 8) {
+      this.discTotal++;
+      this.initGame();
+      this.draw();
+    }
+  }
+
+  private decrementDisc() {
+    if (this.discTotal > 3) {
+      this.discTotal--;
+      this.initGame();
+      this.draw();
+    }
   }
 }
