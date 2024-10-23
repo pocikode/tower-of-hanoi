@@ -6,3 +6,9 @@
     animation: marquee 10s linear infinite;
     white-space: nowrap;
 }
+
+.github-icon {
+    fill: #0ff; /* Neon cyan color */
+    filter: drop-shadow(0 0 10px #0ff) drop-shadow(0 0 20px #0ff);
+    transition: all 0.3s ease-in-out;
+}
