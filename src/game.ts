@@ -75,13 +75,6 @@ class Disc extends BaseElement {
   }
 
   public moveTo(rod: Rod) {
-    let i = 0;
-    for (i = 0; i < rod.discs.length; i++) {
-      if (rod.discs[i] === this) {
-        break;
-      }
-    }
-
     if (this.rod !== rod) {
       this.rod.discs = this.rod.discs.slice(0, this.rod.discs.length - 1);
       this.rod = rod;
@@ -91,6 +84,17 @@ class Disc extends BaseElement {
     this.x = rod.x + (rod.width - this.width) / 2;
     this.y =
       rod.y + rod.height - this.height - this.height * (rod.discs.length - 1);
+  }
+
+  public getDeltaXY(rod: Rod, totalFrames: number) {
+    const rodX = rod.x + (rod.width - this.width) / 2;
+    const rodY =
+      rod.y + rod.height - this.height - this.height * (rod.discs.length - 1);
+
+    return {
+      dx: (rodX - this.x) / totalFrames,
+      dy: (rodY - this.y) / totalFrames,
+    };
   }
 }
 
@@ -136,6 +140,7 @@ export class TowerOfHanoi {
 
   private incrementBtn: Button;
   private decrementBtn: Button;
+  private solveBtn: Button;
 
   constructor(private canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -147,6 +152,14 @@ export class TowerOfHanoi {
 
     this.incrementBtn = new Button(110, 13, 30, 27, "#2A2B5F", "blue");
     this.decrementBtn = new Button(142, 13, 30, 27, "#2A2B5F", "blue");
+    this.solveBtn = new Button(
+      canvas.width - 80,
+      13,
+      70,
+      27,
+      "#2A2B5F",
+      "blue",
+    );
 
     this.initGame();
     this.draw();
@@ -198,6 +211,7 @@ export class TowerOfHanoi {
     this.ctx.fillStyle = "white";
     this.ctx.fillText("Disc:", 10, 32);
     this.ctx.fillText(`${this.discTotal}`, 76, 32);
+
     this.ctx.font = "16px Arial";
     this.ctx.fillText(
       `Minimum Moves: ${2 ** this.discTotal - 1}`,
@@ -211,6 +225,11 @@ export class TowerOfHanoi {
 
     this.incrementBtn.draw(this.ctx);
     this.decrementBtn.draw(this.ctx);
+    this.solveBtn.draw(this.ctx);
+
+    this.ctx.font = "bold 16px Arial";
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText("Solve!", this.canvas.width - 68, 32);
 
     this.ctx.fillStyle = "white";
     this.ctx.beginPath();
@@ -252,6 +271,12 @@ export class TowerOfHanoi {
 
     if (this.decrementBtn.isInside(mouseX, mouseY)) {
       this.decrementDisc();
+    }
+
+    if (this.solveBtn.isInside(mouseX, mouseY)) {
+      this.initGame();
+      this.draw();
+      this.solve(this.discTotal - 1, this.rods[0], this.rods[2], this.rods[1]);
     }
   }
 
@@ -319,5 +344,51 @@ export class TowerOfHanoi {
     this.ctx.font = "700 35px Arial";
     this.ctx.fillStyle = "#FFEB55";
     this.ctx.fillText("Well Done!", 200, 80);
+  }
+
+  private async solve(n: number, fromRod: Rod, toRod: Rod, auxRod: Rod) {
+    if (n < 0) {
+      return;
+    }
+
+    const totalFrames = 40;
+    const disc = this.discs[this.discTotal - n - 1];
+
+    await this.solve(n - 1, fromRod, auxRod, toRod);
+
+    this.totalMoves++;
+    disc.rod = toRod;
+    toRod.discs.push(disc);
+    fromRod.discs = fromRod.discs.slice(0, -1);
+    await this.animatePromise(disc, toRod, totalFrames);
+
+    await this.solve(n - 1, auxRod, toRod, fromRod);
+  }
+
+  private animatePromise(
+    disc: Disc,
+    rod: Rod,
+    totalFrames: number,
+  ): Promise<void> {
+    const that = this;
+    return new Promise((resolve) => {
+      let frame = 0;
+      const { dx, dy } = disc.getDeltaXY(rod, totalFrames);
+
+      function animate() {
+        disc.x += dx;
+        disc.y += dy;
+        frame++;
+        that.draw();
+
+        if (frame < totalFrames) {
+          requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      }
+
+      animate();
+    });
   }
 }
