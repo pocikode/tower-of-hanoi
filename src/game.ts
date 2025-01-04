@@ -4,7 +4,7 @@ abstract class BaseElement {
     public y: number,
     public width: number,
     public height: number,
-  ) {}
+  ) { }
 
   public isInside(mouseX: number, mouseY: number) {
     return (
@@ -130,6 +130,7 @@ export class TowerOfHanoi {
   private ctx: CanvasRenderingContext2D;
   private discTotal = 3;
   private totalMoves = 0;
+  private minMoves = 2 ** this.discTotal - 1;
   private rods: Rod[] = [];
   private discs: Disc[] = [];
   private discColors: string[] = ["#FFEB55", "#EE66A6", "#D91656", "#640D5F"];
@@ -225,11 +226,15 @@ export class TowerOfHanoi {
 
     this.incrementBtn.draw(this.ctx);
     this.decrementBtn.draw(this.ctx);
-    this.solveBtn.draw(this.ctx);
 
-    this.ctx.font = "bold 16px Arial";
-    this.ctx.fillStyle = "white";
-    this.ctx.fillText("Solve!", this.canvas.width - 68, 32);
+    if (!this.isDone) {
+      if (this.totalMoves >= this.minMoves) {
+        this.solveBtn.draw(this.ctx);
+        this.ctx.font = "bold 16px Arial";
+        this.ctx.fillStyle = "white";
+        this.ctx.fillText("Solve!", this.canvas.width - 68, 32);
+      }
+    }
 
     this.ctx.fillStyle = "white";
     this.ctx.beginPath();
